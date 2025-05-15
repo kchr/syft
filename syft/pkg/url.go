@@ -3,6 +3,7 @@ package pkg
 import (
 	"sort"
 	"strings"
+	"text/template"
 
 	"github.com/anchore/packageurl-go"
 	"github.com/anchore/syft/syft/linux"
@@ -22,6 +23,9 @@ const (
 	purlGradlePkgType = "gradle"
 )
 
+// This would (probably) be the place to optionally support template strings for
+// the PURL qualifiers...
+//
 func PURLQualifiers(vars map[string]string, release *linux.Release) (q packageurl.Qualifiers) {
 	keys := make([]string, 0, len(vars))
 	for k := range vars {
@@ -60,6 +64,55 @@ func PURLQualifiers(vars map[string]string, release *linux.Release) (q packageur
 		q = append(q, packageurl.Qualifier{
 			Key:   PURLQualifierDistro,
 			Value: strings.Join(distroQualifiers, "-"),
+		})
+	}
+
+	return q
+}
+
+func PURLTemplateQualifiers(vars map[string]string, release *linux.Release, tstring string) (q packageurl.Qualifiers) {
+
+	if vars == nil {
+		vars = map[string]string{}
+	}
+
+	tpl, err := template.New("qtemplate").Parse(tstring)
+	if err != nil {
+		return q
+	}
+
+	var releaseQualifiers strings.Builder
+
+	tpl.Execute(&releaseQualifiers, release)
+
+	qpairs := strings.SplitSeq(releaseQualifiers.String(), "&")
+
+	for pair := range qpairs {
+		if !strings.Contains(pair, "=") {
+			continue
+		}
+		tvars := strings.Split(pair, "=")
+		key, value := tvars[0], tvars[1]
+		if key == "" || value == "" {
+			continue
+		}
+		vars[key] = value
+	}
+
+	keys := make([]string, 0, len(vars))
+	for k := range vars {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		val := vars[k]
+		if val == "" {
+			continue
+		}
+		q = append(q, packageurl.Qualifier{
+			Key:   k,
+			Value: vars[k],
 		})
 	}
 
