@@ -22,7 +22,29 @@ const (
 	purlGradlePkgType = "gradle"
 )
 
-func PURLQualifiers(vars map[string]string, release *linux.Release) (q packageurl.Qualifiers) {
+type PURLOptionsDistro int
+
+const (
+	DistroVersion PURLOptionsDistro = iota // Default value
+	DistroCodename
+)
+
+type PURLOptions struct {
+	DistroQualifier PURLOptionsDistro
+}
+
+// String representation of distro qualifier options, use for mapping
+// configuration value to enum.
+var purlOptionsDistroQualifier = map[PURLOptionsDistro]string{
+	DistroVersion:  "version",
+	DistroCodename: "codename",
+}
+
+func (po PURLOptionsDistro) String() string {
+	return purlOptionsDistroQualifier[po]
+}
+
+func PURLQualifiers(vars map[string]string, release *linux.Release, opts *PURLOptions) (q packageurl.Qualifiers) {
 	keys := make([]string, 0, len(vars))
 	for k := range vars {
 		keys = append(keys, k)
@@ -46,14 +68,20 @@ func PURLQualifiers(vars map[string]string, release *linux.Release) (q packageur
 		return q
 	}
 
-	if release.ID != "" {
-		distroQualifiers = append(distroQualifiers, release.ID)
-	}
-
-	if release.VersionID != "" {
-		distroQualifiers = append(distroQualifiers, release.VersionID)
-	} else if release.BuildID != "" {
-		distroQualifiers = append(distroQualifiers, release.BuildID)
+	switch (opts.DistroQualifier) {
+	case DistroVersion:
+		if release.ID != "" {
+			distroQualifiers = append(distroQualifiers, release.ID)
+		}
+		if release.VersionID != "" {
+			distroQualifiers = append(distroQualifiers, release.VersionID)
+		} else if release.BuildID != "" {
+			distroQualifiers = append(distroQualifiers, release.BuildID)
+		}
+	case DistroCodename:
+		if release.VersionCodename != "" {
+			distroQualifiers = append(distroQualifiers, release.VersionCodename)
+		}
 	}
 
 	if len(distroQualifiers) > 0 {
