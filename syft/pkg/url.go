@@ -44,6 +44,14 @@ func (po PURLOptionsDistro) String() string {
 	return purlOptionsDistroQualifier[po]
 }
 
+func PURLDistroQualifiers() []string {
+	vars := make([]string, len(purlOptionsDistroQualifier))
+	for _, s := range(purlOptionsDistroQualifier) {
+		vars = append(vars, s)
+	}
+	return vars
+}
+
 func PURLQualifiers(vars map[string]string, release *linux.Release, opts *PURLOptions) (q packageurl.Qualifiers) {
 	keys := make([]string, 0, len(vars))
 	for k := range vars {
