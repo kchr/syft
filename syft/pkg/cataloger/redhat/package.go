@@ -121,6 +121,7 @@ func packageURL(name, arch string, epoch *int, srpm string, version, release str
 		pkg.PURLQualifiers(
 			qualifiers,
 			distro,
+			&pkg.PURLOptions{},
 		),
 		"",
 	).ToString()

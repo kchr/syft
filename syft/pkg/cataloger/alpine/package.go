@@ -57,6 +57,7 @@ func packageURL(m pkg.ApkDBEntry, distro *linux.Release) string {
 		pkg.PURLQualifiers(
 			qualifiers,
 			distro,
+			&pkg.PURLOptions{},
 		),
 		"",
 	).ToString()
